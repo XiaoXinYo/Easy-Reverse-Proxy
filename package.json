@@ -1,0 +1,20 @@
+{
+  "name": "easy-reverse-proxy",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "ts-node ./src/main.ts",
+    "build": "tsc",
+    "run": "tsc && node ./dist/main.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "http-proxy-middleware": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}

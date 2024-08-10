@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ESNext",
+    "esModuleInterop": true,
+    // "moduleResolution": "Node",
+    "outDir": "./dist/"
+  },
+  "ts-node": {
+    // "esm": true,
+    // "experimentalSpecifierResolution": "node"
+  }
+}
