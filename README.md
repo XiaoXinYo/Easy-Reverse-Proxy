@@ -6,7 +6,7 @@
 1. 平台: Linux/Windows/MacOS.
 2. 语言: Node.js.
 ## 配置
-查看./src/config.py文件.
+查看./src/config.ts文件.
 ```TypeScript
 let proxys: Proxy[] = [
     {
