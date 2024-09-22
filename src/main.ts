@@ -24,8 +24,10 @@ PROXYS.forEach((item: Proxy, index: number, array: Proxy[]): void => {
                         }
 
                         let targetResponseText = targetResponseBuffer.toString('utf-8');
-                        for (let replace of item.replaces) {
-                            targetResponseText = targetResponseText.replaceAll(replace.old, replace.new);
+                        if (item.replaces) {
+                            for (let replace of item.replaces) {
+                                targetResponseText = targetResponseText.replaceAll(replace.old, replace.new);
+                            }
                         }
                         return targetResponseText;
                     })

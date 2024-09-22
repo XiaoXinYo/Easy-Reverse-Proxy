@@ -3,7 +3,7 @@ export let PORT = 370; // 端口
 export interface Proxy {
     domain: string;
     url: string;
-    enable?: boolean;
+    enable: boolean;
     replaces?: {
         old: string,
         new: string
