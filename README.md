@@ -1,4 +1,4 @@
-![Release](https://img.shields.io/badge/Release-0.0.1-blue)
+![Release](https://img.shields.io/badge/Release-0.0.2-blue)
 ---
 ## 介绍
 一款基于Node.js Express框架,开发的反向代理程序.
@@ -11,11 +11,13 @@
 let PROXYS: Proxy[] = [
     {
         domain: "www.example1.com",
-        url: "https://www.microsoft.com/"
+        url: "https://www.microsoft.com/",
+        enable: true
     },
     {
         domain: "www.example2.com",
-        url: "https://github.com/"
+        url: "https://github.com/",
+        enable: true
     }
 ]
 ```
