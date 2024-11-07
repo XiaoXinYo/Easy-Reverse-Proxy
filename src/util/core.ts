@@ -5,14 +5,14 @@ export enum ExceptionResponseCode {
 export class ExceptionResponse extends Error {
     readonly code: number;
 
-    constructor(code: number, message: string) {
+    constructor(code: ExceptionResponseCode, message: string) {
         super(message);
         this.code = code;
     }
 }
 
 export class Response {
-    generate(code: number, message: string, data: any=null): object {
+    static generate(code: number, message: string, data: any=null): object {
         return {
             code: code,
             message: message,
@@ -21,10 +21,10 @@ export class Response {
     }
 
     static error(code: number, message: string): object {
-        return new Response().generate(code, message);
+        return Response.generate(code, message);
     }
 
     static success(data: any): object {
-        return new Response().generate(200, 'success', data);
+        return Response.generate(200, 'success', data);
     }
 }

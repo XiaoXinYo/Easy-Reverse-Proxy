@@ -9,13 +9,13 @@ function generateProxyUrl(url: string): string
 ```TypeScript
 request?: (header: object, body: object) => TemplateRequestResult
 ```
-1. 说明: 对代理网址请求时调用.
+1. 说明: 对原始网址请求时调用.
 2. 参数: `header`: 请求头,`body`: 请求体.
 ## response
 ```TypeScript
 response?: (header: object, body: string) => Promise<TemplateResponseResult>
 ```
-1. 说明: 当代理网址响应时调用.
+1. 说明: 当原始网址响应时调用.
 2. 参数: `header`: 响应头,`body`: 响应体.
 ## 示例
 ```TypeScript

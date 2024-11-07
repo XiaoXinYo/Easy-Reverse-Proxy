@@ -1,8 +1,8 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {createProxyMiddleware, responseInterceptor} from 'http-proxy-middleware';
-import {PROXYS, PORT} from './config';
-import {verifyProxyCode} from './util/template';
+import {PROXYS, PORT, PROXY_CODE_SECRET} from './config';
+import {generateSha256} from "./util/auxiliary";
 import {ExceptionResponse, ExceptionResponseCode, Response} from './util/core';
 import type {Request} from "express";
 import type {Middleware, Proxy, MiddlewareConfig} from './util/model';
@@ -11,15 +11,15 @@ let APP = express();
 APP.use(bodyParser.json());
 APP.use(bodyParser.urlencoded({extended: true}));
 
-let MIDDLEWARES: Middleware[] = PROXYS.map((item: Proxy): Middleware => {
-    let middlewareConfig: MiddlewareConfig = {
+let MIDDLEWARES = PROXYS.map((item: Proxy): Middleware => {
+    let config: MiddlewareConfig = {
         target: item.url,
         changeOrigin: true,
         on: {}
     };
 
     if (item.template?.request) {
-        middlewareConfig.on.proxyReq = (targetRequest, request: Request) => {
+        config.on.proxyReq = (targetRequest, request: Request): void => {
             let targetRequestHeader = {};
             for (let targetRequestHeaderKey in targetRequest.getHeaders()) {
                 targetRequestHeader[targetRequestHeaderKey] = targetRequest.getHeader(targetRequestHeaderKey);
@@ -36,7 +36,7 @@ let MIDDLEWARES: Middleware[] = PROXYS.map((item: Proxy): Middleware => {
         }
     }
     if (item.template?.response) {
-        middlewareConfig.on.proxyRes = responseInterceptor(async (targetResponseBuffer: Buffer, targetResponse, request, response): Promise<string> => {
+        config.on.proxyRes = responseInterceptor(async (targetResponseBuffer: Buffer, targetResponse, request, response): Promise<string> => {
             let targetResponseText = targetResponseBuffer.toString('utf-8');
             let responseHeader = {};
             for (let responseHeaderKey in response.getHeaders()) {
@@ -44,35 +44,34 @@ let MIDDLEWARES: Middleware[] = PROXYS.map((item: Proxy): Middleware => {
                 response.removeHeader(responseHeaderKey);
             }
 
-            let templateResult = await item.template.response(responseHeader, targetResponseText);
-            for (let templateResultHeaderKey in templateResult.header) {
-                response.setHeader(templateResultHeaderKey, templateResult.header[templateResultHeaderKey]);
+            let result = await item.template.response(responseHeader, targetResponseText);
+            for (let resultHeaderKey in result.header) {
+                response.setHeader(resultHeaderKey, result.header[resultHeaderKey]);
             }
-            targetResponseText = templateResult.body;
+            targetResponseText = result.body;
 
             if (item.replaces) {
                 for (let replace of item.replaces) {
                     targetResponseText = targetResponseText.replaceAll(replace.old, replace.new);
                 }
             }
-
             return targetResponseText;
         });
-        middlewareConfig.selfHandleResponse = true;
+        config.selfHandleResponse = true;
     } else if (item.replaces) {
-        middlewareConfig.on.proxyRes = responseInterceptor(async (targetResponseBuffer: Buffer): Promise<string> => {
+        config.on.proxyRes = responseInterceptor(async (targetResponseBuffer: Buffer): Promise<string> => {
             let targetResponseText = targetResponseBuffer.toString('utf-8');
             for (let replace of item.replaces) {
                 targetResponseText = targetResponseText.replaceAll(replace.old, replace.new);
             }
             return targetResponseText;
         });
-        middlewareConfig.selfHandleResponse = true;
+        config.selfHandleResponse = true;
     }
 
     return {
         domain: item.domain,
-        middleware: createProxyMiddleware(middlewareConfig),
+        middleware: createProxyMiddleware(config),
         enable: item.enable
     }
 });
@@ -81,7 +80,7 @@ APP.use('/:code([0-9a-zA-Z]{64})', (request, response, next): void | Promise<voi
     let code = request.params.code;
     let url = request.query.url as string;
     url = atob(url);
-    if (!verifyProxyCode(url, code)) {
+    if (generateSha256(url, PROXY_CODE_SECRET) !== code) {
         return next();
     }
 
@@ -90,7 +89,6 @@ APP.use('/:code([0-9a-zA-Z]{64})', (request, response, next): void | Promise<voi
         changeOrigin: true
     })(request, response, next);
 });
-
 
 APP.use((request, response, next): void | Promise<void> => {
     let middleware = MIDDLEWARES.find((item: Middleware): boolean => {return request.hostname === item.domain});
