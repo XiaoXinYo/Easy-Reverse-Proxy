@@ -1,9 +1,8 @@
 name: Bug提交
 description: Bug提交
-title: '[Bug]:'
+title: '[Bug]: '
 body:
   - type: checkboxes
-    id: confirm
     attributes:
       label: 在提交前请确保以下这些
       options:
@@ -12,7 +11,6 @@ body:
         - label: 在Issues找不到它
           required: true
   - type: dropdown
-    id: os
     attributes:
       label: 操作系统
       multiple: true
@@ -23,31 +21,8 @@ body:
         - Other
     validations:
       required: true
-  - type: input
-    id: nodejs-version
+  - type: textarea
     attributes:
-      label: Node.js版本
+      label: 描述
     validations:
       required: true
-  - type: textarea
-    id: problem
-    attributes:
-      label: 问题
-    validations:
-      required: true
-  - type: textarea
-    id: trigger
-    attributes:
-      label: 触发
-      description: 如何触发此问题(例如提供代码).
-    validations:
-      required: true
-  - type: textarea
-    id: error
-    attributes:
-      label: 报错
-      description: 提供报错输出.
-  - type: textarea
-    id: other
-    attributes:
-      label: 其他
