@@ -3,7 +3,7 @@ export enum ExceptionResponseCode {
 }
 
 export class ExceptionResponse extends Error {
-    readonly code: number;
+    readonly code: ExceptionResponseCode;
 
     constructor(code: ExceptionResponseCode, message: string) {
         super(message);
@@ -12,19 +12,21 @@ export class ExceptionResponse extends Error {
 }
 
 export class Response {
-    static generate(code: number, message: string, data: any=null): object {
-        return {
-            code: code,
-            message: message,
-            data: data
-        };
+    private static generate(httpCode: number, serviceCode: number, message: string, data: any): Function {
+        return function(response): void {
+            response.status(httpCode).json({
+                code: serviceCode,
+                message: message,
+                data: data
+            });
+        }
     }
 
-    static error(code: number, message: string): object {
-        return Response.generate(code, message);
+    static error(serviceCode: number, message: string, httpCode: number=200): Function {
+        return Response.generate(httpCode, serviceCode, message, null);
     }
 
-    static success(data: any): object {
-        return Response.generate(200, 'success', data);
+    static success(data: any): Function {
+        return Response.generate(200, 200, 'success', data);
     }
 }

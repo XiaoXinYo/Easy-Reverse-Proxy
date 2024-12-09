@@ -105,10 +105,10 @@ APP.use((request, response, next): void | Promise<void> => {
 
 APP.use((error, request, response, next): void => {
     if (error instanceof ExceptionResponse) {
-        return response.json(Response.error(error.code, error.message));
+        return Response.error(error.code, error.message)(response);
     }
 
-    return response.status(500).json(Response.error(500, "未知错误"));
+    return Response.error(500, "未知错误", 500)(response);
 });
 
 APP.listen(PORT);

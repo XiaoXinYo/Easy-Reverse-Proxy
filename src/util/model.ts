@@ -1,6 +1,17 @@
 import type {ProxyReqCallback, ProxyResCallback} from 'http-proxy';
 import type {RequestHandler} from 'http-proxy-middleware';
 
+export interface Proxy {
+    domain: string;
+    url: string;
+    enable: boolean;
+    template?: Template;
+    replaces?: {
+        old: string | RegExp;
+        new: string;
+    }[];
+}
+
 export interface MiddlewareConfig {
     target: string;
     changeOrigin: boolean;
@@ -30,15 +41,4 @@ export interface TemplateResponseResult {
 export interface Template {
     request?: (header: object, body: object) => TemplateRequestResult;
     response?: (header: object, body: string) => Promise<TemplateResponseResult>;
-}
-
-export interface Proxy {
-    domain: string;
-    url: string;
-    enable: boolean;
-    template?: Template;
-    replaces?: {
-        old: string | RegExp;
-        new: string;
-    }[];
 }
