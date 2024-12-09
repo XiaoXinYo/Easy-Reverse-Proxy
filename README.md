@@ -1,4 +1,4 @@
-![Release](https://img.shields.io/badge/Release-0.1.1-blue)
+![Release](https://img.shields.io/badge/Release-0.1.2-blue)
 ---
 ## 介绍
 一款基于Node.js Express框架,开发的反向代理程序.
@@ -6,8 +6,7 @@
 1. 操作系统: Linux/Windows/MacOS.
 2. 语言: Node.js.
 ## 部署
-1. Linux/Windows/MacOS:执行`npm run run`命令.
-2. 支持Docker.
+Linux/Windows/MacOS:执行`npm run run`命令.
 ## Vercel部署
 1. GitHub Fork本项目.
 2. 修改配置.
