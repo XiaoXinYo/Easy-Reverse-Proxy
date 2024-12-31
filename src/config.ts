@@ -1,4 +1,4 @@
-import {Proxy} from './util/model';
+import type {Proxy} from './util/model';
 
 export let PORT = 377; // 端口
 
