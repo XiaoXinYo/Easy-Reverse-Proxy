@@ -6,10 +6,6 @@ export interface Proxy {
     url: string;
     enable: boolean;
     template?: Template;
-    replaces?: {
-        old: string | RegExp;
-        new: string;
-    }[];
 }
 
 export interface MiddlewareConfig {
@@ -17,7 +13,7 @@ export interface MiddlewareConfig {
     changeOrigin: boolean;
     selfHandleResponse?: boolean;
     on: {
-        proxyReq?: ProxyReqCallback;
+        proxyReq: ProxyReqCallback;
         proxyRes?: ProxyResCallback;
     }
 }
@@ -28,17 +24,17 @@ export interface Middleware {
     enable: boolean;
 }
 
-export interface TemplateRequestResult {
+export interface TemplateRequest {
     header: object;
     body: object;
 }
 
-export interface TemplateResponseResult {
+export interface TemplateResponse {
     header: object;
     body: string;
 }
 
 export interface Template {
-    request?: (header: object, body: object) => TemplateRequestResult;
-    response?: (header: object, body: string) => Promise<TemplateResponseResult>;
+    request?: (option: TemplateRequest) => TemplateRequest;
+    response?: (option: TemplateResponse) => Promise<TemplateResponse>;
 }

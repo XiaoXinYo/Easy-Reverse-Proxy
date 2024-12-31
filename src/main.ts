@@ -1,72 +1,57 @@
 import express from 'express';
+import type {Request} from "express";
 import bodyParser from 'body-parser';
-import {createProxyMiddleware, responseInterceptor} from 'http-proxy-middleware';
+import {createProxyMiddleware, fixRequestBody, responseInterceptor} from 'http-proxy-middleware';
+
 import {PROXYS, PORT, PROXY_CODE_SECRET} from './config';
+import type {Proxy, Middleware, MiddlewareConfig} from './util/model';
 import {generateSha256} from "./util/auxiliary";
 import {ExceptionResponse, ExceptionResponseCode, Response} from './util/core';
-import type {Request} from "express";
-import type {Middleware, Proxy, MiddlewareConfig} from './util/model';
 
 let APP = express();
-APP.use(bodyParser.json());
-APP.use(bodyParser.urlencoded({extended: true}));
 
 let MIDDLEWARES = PROXYS.map((item: Proxy): Middleware => {
     let config: MiddlewareConfig = {
         target: item.url,
         changeOrigin: true,
-        on: {}
+        on: {
+            proxyReq: fixRequestBody
+        }
     };
 
-    if (item.template?.request) {
-        config.on.proxyReq = (targetRequest, request: Request): void => {
-            let targetRequestHeader = {};
-            for (let targetRequestHeaderKey in targetRequest.getHeaders()) {
-                targetRequestHeader[targetRequestHeaderKey] = targetRequest.getHeader(targetRequestHeaderKey);
-                targetRequest.removeHeader(targetRequestHeaderKey);
-            }
+    if (item.template) {
+        if (item.template.request) {
+            config.on.proxyReq = (targetRequest, request: Request): void => {
+                let targetRequestHeader = {};
+                for (let targetRequestHeaderKey in targetRequest.getHeaders()) {
+                    targetRequestHeader[targetRequestHeaderKey] = targetRequest.getHeader(targetRequestHeaderKey);
+                    targetRequest.removeHeader(targetRequestHeaderKey);
+                }
 
-            let result = item.template.request(targetRequestHeader, request.body);
-            for (let resultHeaderKey in result.header) {
-                targetRequest.setHeader(resultHeaderKey, result.header[resultHeaderKey]);
-            }
-            if (Object.keys(request.body).length !== 0) {
-                targetRequest.end(result.body.toString());
+                let result = item.template.request({header: targetRequestHeader, body: request.body});
+                for (let resultHeaderKey in result.header) {
+                    targetRequest.setHeader(resultHeaderKey, result.header[resultHeaderKey]);
+                }
+                request.body = result.body;
+                fixRequestBody(targetRequest, request);
             }
         }
-    }
-    if (item.template?.response) {
-        config.on.proxyRes = responseInterceptor(async (targetResponseBuffer: Buffer, targetResponse, request, response): Promise<string> => {
-            let targetResponseText = targetResponseBuffer.toString('utf-8');
-            let responseHeader = {};
-            for (let responseHeaderKey in response.getHeaders()) {
-                responseHeader[responseHeaderKey] = response.getHeader(responseHeaderKey);
-                response.removeHeader(responseHeaderKey);
-            }
-
-            let result = await item.template.response(responseHeader, targetResponseText);
-            for (let resultHeaderKey in result.header) {
-                response.setHeader(resultHeaderKey, result.header[resultHeaderKey]);
-            }
-            targetResponseText = result.body;
-
-            if (item.replaces) {
-                for (let replace of item.replaces) {
-                    targetResponseText = targetResponseText.replaceAll(replace.old, replace.new);
+        if (item.template.response) {
+            config.on.proxyRes = responseInterceptor(async (targetResponseBuffer: Buffer, targetResponse, request, response): Promise<string> => {
+                let responseHeader = {};
+                for (let responseHeaderKey in response.getHeaders()) {
+                    responseHeader[responseHeaderKey] = response.getHeader(responseHeaderKey);
+                    response.removeHeader(responseHeaderKey);
                 }
-            }
-            return targetResponseText;
-        });
-        config.selfHandleResponse = true;
-    } else if (item.replaces) {
-        config.on.proxyRes = responseInterceptor(async (targetResponseBuffer: Buffer): Promise<string> => {
-            let targetResponseText = targetResponseBuffer.toString('utf-8');
-            for (let replace of item.replaces) {
-                targetResponseText = targetResponseText.replaceAll(replace.old, replace.new);
-            }
-            return targetResponseText;
-        });
-        config.selfHandleResponse = true;
+
+                let result = await item.template.response({header: responseHeader, body: targetResponseBuffer.toString('utf-8')});
+                for (let resultHeaderKey in result.header) {
+                    response.setHeader(resultHeaderKey, result.header[resultHeaderKey]);
+                }
+                return result.body;
+            });
+            config.selfHandleResponse = true;
+        }
     }
 
     return {
@@ -77,8 +62,8 @@ let MIDDLEWARES = PROXYS.map((item: Proxy): Middleware => {
 });
 
 APP.use('/:code([0-9a-zA-Z]{64})', (request, response, next): void | Promise<void> => {
-    let code = request.params.code;
     let url = request.query.url as string;
+    let code = request.params.code;
     url = atob(url);
     if (generateSha256(url, PROXY_CODE_SECRET) !== code) {
         return next();
@@ -90,7 +75,7 @@ APP.use('/:code([0-9a-zA-Z]{64})', (request, response, next): void | Promise<voi
     })(request, response, next);
 });
 
-APP.use((request, response, next): void | Promise<void> => {
+APP.use(bodyParser.json(), bodyParser.urlencoded({extended: true}), (request, response, next): void | Promise<void> => {
     let middleware = MIDDLEWARES.find((item: Middleware): boolean => {return request.hostname === item.domain});
     if (!middleware) {
         throw new ExceptionResponse(ExceptionResponseCode.SYSTEM, '代理不存在');
