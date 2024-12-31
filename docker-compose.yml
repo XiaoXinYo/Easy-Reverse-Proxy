@@ -1,0 +1,9 @@
+services:
+  app:
+    build: ./
+    ports:
+      - "377:377"
+    entrypoint: ["sh", "./entrypoint.sh"]
+    volumes:
+      - ./src/config.ts:/app/src/config.ts
+      - ./src/template:/app/src/template

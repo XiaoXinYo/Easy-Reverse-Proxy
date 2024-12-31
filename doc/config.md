@@ -1,22 +1,18 @@
 # 配置
-## config.py
-查看config.py文件.
-## Proxy
+## config.ts
+查看config.ts文件.
+### Proxy
 ```Typescript
 interface Proxy {
     domain: string; // 域名
     url: string; // 网址
     enable: boolean; // 开启
     template?: Template; // 模板
-    replaces?: { // 替换
-        old: string | RegExp; // 旧文本
-        new: string; // 新文本
-    }[];
 }
 ```
-### 示例
+## 示例
 ```TypeScript
-import {Proxy} from './util/model';
+import type {Proxy} from './util/model';
 import Github from './template/github';
 
 export let PORT = 377; // 端口
@@ -32,4 +28,4 @@ export let PROXYS: Proxy[] = [
     }
 ];
 ```
-www.example.com 代理 https://github.com/
+说明: www.example.com 代理 https://github.com/.
