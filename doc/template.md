@@ -24,7 +24,7 @@ request?: (option: TemplateRequest) => TemplateRequest
 ```typescript
 interface TemplateResponse {
     header: object; // 响应头
-    body: string; // 响应体
+    body: Buffer; // 响应体
 }
 ```
 ```TypeScript
@@ -33,13 +33,15 @@ response?: (option: TemplateResponse) => Promise<TemplateResponse>
 说明: 原始网址响应时调用,此方法会阻塞.
 ## 示例
 ```TypeScript
-import type {Template, TemplateResponse} from '../util/model';
+import type {Template} from '../util/model';
 import {generateProxyUrl} from '../util/template';
 
 let template: Template = {
-    response: async (option: TemplateResponse): Promise<TemplateResponse> => {
-        option.body = option.body.replaceAll('Product', 'Easy-Reverse-Proxy');
-        option.body = option.body.replaceAll('https://avatars.githubusercontent.com/u/56395004?v=4', generateProxyUrl('https://avatars.githubusercontent.com/u/56395004?v=4&amp;size=40'));
+    async response (option) {
+        let bodyString = option.body.toString();
+        bodyString = bodyString.replaceAll('Product', 'Easy-Reverse-Proxy');
+        bodyString = bodyString.replaceAll('https://avatars.githubusercontent.com/u/56395004?v=4', generateProxyUrl('https://avatars.githubusercontent.com/u/56395004?v=4&amp;size=40'));
+        option.body = Buffer.from(bodyString);
         return option;
     }
 };
