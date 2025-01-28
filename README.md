@@ -1,4 +1,4 @@
-![Release](https://img.shields.io/badge/Release-0.2.0-blue)
+![Release](https://img.shields.io/badge/Release-0.2.1-blue)
 ---
 ## 介绍
 一款基于Node.js Express框架,开发的反向代理程序.
