@@ -1,16 +1,16 @@
 import express from 'express';
-import type {Request} from "express";
+import type {Request, Response, NextFunction} from "express";
+import {fixRequestBody, responseInterceptor, createProxyMiddleware} from 'http-proxy-middleware';
 import bodyParser from 'body-parser';
-import {createProxyMiddleware, fixRequestBody, responseInterceptor} from 'http-proxy-middleware';
 
-import {PROXYS, PORT, PROXY_CODE_SECRET} from './config';
-import type {Proxy, Middleware, MiddlewareConfig} from './util/model';
+import {PROXIES, PROXY_CODE_SECRET, PORT} from './config';
+import type {Middleware, MiddlewareConfig} from './util/model';
 import {generateSha256} from "./util/auxiliary";
-import {ExceptionResponse, ExceptionResponseCode, Response} from './util/core';
+import {ExceptionResponse, ExceptionResponseCode, GenerateResponse} from './util/core';
 
 let APP = express();
 
-let MIDDLEWARES = PROXYS.map((item: Proxy): Middleware => {
+let MIDDLEWARES = PROXIES.filter((item): boolean => {return item.enable;}).map((item): Middleware => {
     let config: MiddlewareConfig = {
         target: item.url,
         changeOrigin: true,
@@ -37,14 +37,14 @@ let MIDDLEWARES = PROXYS.map((item: Proxy): Middleware => {
             }
         }
         if (item.template.response) {
-            config.on.proxyRes = responseInterceptor(async (targetResponseBuffer: Buffer, targetResponse, request, response): Promise<string> => {
+            config.on.proxyRes = responseInterceptor(async (targetResponseBuffer, targetResponse, request, response): Promise<Buffer> => {
                 let responseHeader = {};
                 for (let responseHeaderKey in response.getHeaders()) {
                     responseHeader[responseHeaderKey] = response.getHeader(responseHeaderKey);
                     response.removeHeader(responseHeaderKey);
                 }
 
-                let result = await item.template.response({header: responseHeader, body: targetResponseBuffer.toString('utf-8')});
+                let result = await item.template.response({header: responseHeader, body: targetResponseBuffer});
                 for (let resultHeaderKey in result.header) {
                     response.setHeader(resultHeaderKey, result.header[resultHeaderKey]);
                 }
@@ -56,8 +56,7 @@ let MIDDLEWARES = PROXYS.map((item: Proxy): Middleware => {
 
     return {
         domain: item.domain,
-        middleware: createProxyMiddleware(config),
-        enable: item.enable
+        middleware: createProxyMiddleware(config)
     }
 });
 
@@ -75,25 +74,25 @@ APP.use('/:code([0-9a-zA-Z]{64})', (request, response, next): void | Promise<voi
     })(request, response, next);
 });
 
-APP.use(bodyParser.json(), bodyParser.urlencoded({extended: true}), (request, response, next): void | Promise<void> => {
-    let middleware = MIDDLEWARES.find((item: Middleware): boolean => {return request.hostname === item.domain});
-    if (!middleware) {
+APP.use(bodyParser.json(), bodyParser.urlencoded({extended: true}), (request, response, next): Promise<void> => {
+    let proxy = PROXIES.find((item): boolean => {return item.domain === request.hostname;});
+    if (!proxy) {
         throw new ExceptionResponse(ExceptionResponseCode.SYSTEM, '代理不存在');
     }
 
-    if (middleware.enable) {
-        return middleware.middleware(request, response, next);
+    if (proxy.enable) {
+        return MIDDLEWARES.find((item): boolean => {return item.domain === proxy.domain;}).middleware(request, response, next);
     } else {
         throw new ExceptionResponse(ExceptionResponseCode.SYSTEM, '代理已关闭');
     }
 });
 
-APP.use((error, request, response, next): void => {
+APP.use((error: Error, request: Request, response: Response, next: NextFunction): void => {
     if (error instanceof ExceptionResponse) {
-        return Response.error(error.code, error.message)(response);
+        return GenerateResponse.error(error.code, error.message)(response);
     }
 
-    return Response.error(500, "未知错误", 500)(response);
+    return GenerateResponse.error(500, "未知错误", 500)(response);
 });
 
 APP.listen(PORT);
