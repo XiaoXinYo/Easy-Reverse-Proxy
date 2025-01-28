@@ -1,3 +1,7 @@
+import type {Response} from 'express';
+
+import type {GenerateResponseCallback} from './model';
+
 export enum ExceptionResponseCode {
     SYSTEM = 100
 }
@@ -11,9 +15,9 @@ export class ExceptionResponse extends Error {
     }
 }
 
-export class Response {
-    private static generate(httpCode: number, serviceCode: number, message: string, data: any): Function {
-        return function(response): void {
+export class GenerateResponse {
+    private static generate(httpCode: number, serviceCode: number, message: string, data: any): GenerateResponseCallback {
+        return function(response: Response): void {
             response.status(httpCode).json({
                 code: serviceCode,
                 message: message,
@@ -22,11 +26,11 @@ export class Response {
         }
     }
 
-    static error(serviceCode: number, message: string, httpCode: number=200): Function {
-        return Response.generate(httpCode, serviceCode, message, null);
+    static error(serviceCode: number, message: string, httpCode: number=200): GenerateResponseCallback {
+        return GenerateResponse.generate(httpCode, serviceCode, message, null);
     }
 
-    static success(data: any): Function {
-        return Response.generate(200, 200, 'success', data);
+    static success(data: any): GenerateResponseCallback {
+        return GenerateResponse.generate(200, 200, 'success', data);
     }
 }
