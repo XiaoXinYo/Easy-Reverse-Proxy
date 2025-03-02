@@ -1,4 +1,4 @@
-import {generateSha256} from './auxiliary';
+import {generateSha256} from './helper';
 import {PROXY_CODE_SECRET} from '../config';
 
 export function generateProxyUrl(url: string): string {

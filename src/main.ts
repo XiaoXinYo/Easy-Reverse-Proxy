@@ -5,7 +5,7 @@ import bodyParser from 'body-parser';
 
 import {PROXIES, PROXY_CODE_SECRET, PORT} from './config';
 import type {Middleware, MiddlewareConfig} from './util/model';
-import {generateSha256} from "./util/auxiliary";
+import {generateSha256} from "./util/helper";
 import {ExceptionResponse, ExceptionResponseCode, GenerateResponse} from './util/core';
 
 let APP = express();
